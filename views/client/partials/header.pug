@@ -1,0 +1,191 @@
+// Top Header
+.top-header
+  .container
+    .inner-wrap
+      if(settingWebsiteInfo.phone)
+        .inner-item
+          i.fa-solid.fa-phone
+          | #{settingWebsiteInfo.phone}
+      if(settingWebsiteInfo.email)
+        .inner-item
+          i.fa-solid.fa-envelope
+          | #{settingWebsiteInfo.email}
+      if(settingWebsiteInfo.address)
+        .inner-item
+          i.fa-solid.fa-building
+          | #{settingWebsiteInfo.address}
+// End Top Header
+
+// Header
+header.header
+  .container
+    .inner-wrap
+      // Menu Mobile
+      button.inner-menu-mobile
+        i.fa-solid.fa-bars
+      
+      // Logo
+      .inner-logo
+        a(href="/")
+          img(
+            alt=settingWebsiteInfo.websiteName
+            src=settingWebsiteInfo.logo
+            )
+      
+      // Menu
+      nav.inner-menu
+        ul
+          li
+            a.active(href="/") Trang chủ
+          each item in categoryList
+            li
+              a(href=`/category/${item.slug}`) #{item.name}
+              if(item.children)
+                i.fa-solid.fa-caret-down
+                ul
+                  each itemChild in item.children
+                    li
+                      a(href=`/category/${itemChild.slug}`) #{itemChild.name}
+          li
+            a(href="/news") Tin tức
+          li
+            a(href="/contacts") Liên hệ
+        .inner-overlay
+      
+      // ===== BỎ ICON GIỎ HÀNG - CHỈ GIỮ USER =====
+      .inner-cart
+        if user
+          .inner-user-dropdown
+            a.inner-user-toggle(href="javascript:;")
+              if user.avatar
+                img.inner-user-avatar(
+                  alt=user.fullName 
+                  src=user.avatar
+                  style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;"
+                )
+              else
+                img(
+                  alt="User" 
+                  src="/assets/images/icon-user.png"
+                )
+            .inner-user-menu
+              .inner-user-info
+                if user.avatar
+                  img(src=user.avatar style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;")
+                .inner-user-name #{user.fullName}
+                .inner-user-email #{user.email}
+              ul
+                li
+                  a(href="/user/profile")
+                    i.fa-solid.fa-user
+                    | Thông tin cá nhân
+                li
+                  a(href="/user/bookings")
+                    i.fa-solid.fa-list-check
+                    | Đơn đặt vé của tôi
+                li
+                  a(href="/user/change-password")
+                    i.fa-solid.fa-key
+                    | Đổi mật khẩu
+                li
+                  a.logout-link(href="javascript:;")
+                    i.fa-solid.fa-power-off
+                    | Đăng xuất
+        else
+          a(href="/user/login")
+            img(
+              alt="User" 
+              src="/assets/images/icon-user.png"
+            )
+      // ===========================================
+
+style.
+  .inner-user-dropdown {
+    position: relative;
+  }
+  
+  .inner-user-toggle {
+    cursor: pointer;
+  }
+  
+  .inner-user-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    min-width: 250px;
+    z-index: 1000;
+    margin-top: 10px;
+  }
+  
+  .inner-user-info {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+  }
+  
+  .inner-user-dropdown.show .inner-user-menu {
+    display: block;
+  }
+  
+  .inner-user-name {
+    font-weight: 600;
+    margin-top: 10px;
+    color: #333;
+  }
+  
+  .inner-user-email {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+  }
+  
+  .inner-user-menu ul {
+    list-style: none;
+    padding: 10px 0;
+    margin: 0;
+  }
+  
+  .inner-user-menu ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.3s;
+  }
+  
+  .inner-user-menu ul li a:hover {
+    background: #f5f5f5;
+  }
+  
+  .inner-user-menu ul li a i {
+    margin-right: 10px;
+    width: 20px;
+  }
+
+script.
+  // Toggle menu when clicking the avatar
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.querySelector('.inner-user-toggle');
+    const dropdown = document.querySelector('.inner-user-dropdown');
+
+    if (toggle && dropdown) {
+      toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+      });
+      
+      // Close when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('show');
+        }
+      });
+    }
+  });
+
+// End Header

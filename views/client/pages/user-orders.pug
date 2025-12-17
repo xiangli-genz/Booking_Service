@@ -1,0 +1,37 @@
+extends ../layouts/default.pug
+
+block main
+  .section-12
+    .container
+      .inner-wrap
+        h2.inner-title-main Đơn Hàng Của Tôi
+        if orders.length > 0
+          .inner-order-list
+            each order in orders
+              .inner-order-item
+                .inner-order-header
+                  .inner-order-code Mã: #{order.orderCode}
+                  .inner-order-date #{order.createdAtFormat}
+                .inner-order-body
+                  each item in order.items
+                    .inner-tour-item
+                      .inner-image
+                        img(src=item.avatar)
+                      .inner-content
+                        .inner-name #{item.name}
+                        .inner-quantity Người lớn: #{item.quantityAdult}
+                        .inner-quantity Trẻ em: #{item.quantityChildren}
+                        .inner-quantity Em bé: #{item.quantityBaby}
+                .inner-order-footer
+                  .inner-total Tổng: #{order.total.toLocaleString("vi-VN")}đ
+                  .inner-status
+                    if order.status == "initial"
+                      span.badge.badge-orange #{order.statusName}
+                    else if order.status == "done"
+                      span.badge.badge-green #{order.statusName}
+                    else if order.status == "cancel"
+                      span.badge.badge-red #{order.statusName}
+        else
+          p.text-center Bạn chưa có đơn hàng nào
+        .inner-back
+          a(href="/") Tiếp tục mua hàng

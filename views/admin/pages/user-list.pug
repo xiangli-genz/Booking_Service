@@ -1,0 +1,96 @@
+extends ../layouts/default.pug
+
+block main
+  h1.box-title Quản lý người dùng
+
+  //- Section 4
+  .section-4
+    .inner-wrap
+      .inner-item.inner-label
+        <i class="fa-solid fa-filter"></i> Bộ lọc
+      .inner-item
+        select(filter-status)
+          option(value="") Trạng thái
+          option(value="active") Hoạt động
+          option(value="inactive") Tạm dừng
+      .inner-item.inner-date
+        input(type="date" filter-start-date)
+        span -
+        input(type="date" filter-end-date)
+      .inner-item.inner-reset(filter-reset)
+        <i class="fa-solid fa-rotate-left"></i> Xóa bộ lọc
+  //- End Section 4
+
+  //- Section 5
+  .section-5
+    .inner-wrap
+      .inner-change-status(
+        change-multi
+        data-api=`/${pathAdmin}/user/change-multi`
+      )
+        .inner-item
+          select
+            option(value="") -- Hành động --
+            option(value="active") Hoạt động
+            option(value="inactive") Dừng hoạt động
+            option(value="delete") Xóa
+        .inner-item
+          button Áp dụng
+      .inner-search
+        <i class="fa-solid fa-magnifying-glass"></i>
+        input(type="text" placeholder="Tìm kiếm" search)
+  //- End Section 5
+
+  //- Section 6
+  .section-6
+    .table-2
+      table
+        thead
+          tr
+            th(class="inner-center")
+              input(type="checkbox" class="inner-check" check-all)
+            th Họ tên
+            th(class="inner-center") Ảnh đại diện
+            th Email
+            th Số điện thoại
+            th Địa chỉ
+            th(class="inner-center") Trạng thái
+            th Ngày tạo
+            th Hành động
+        tbody
+          each item in userList
+            tr
+              td(class="inner-center")
+                input(type="checkbox" class="inner-check" check-item=item.id)
+              td #{item.fullName}
+              td(class="inner-center")
+                if item.avatar
+                  img(src=item.avatar class="inner-avatar")
+                else
+                  img(src="/admin/assets/images/avatar.jpg" class="inner-avatar")
+              td #{item.email}
+              td #{item.phone || '--'}
+              td #{item.address || '--'}
+              td(class="inner-center")
+                if (item.status == "active")
+                  .badge.badge-green Hoạt động
+                else if (item.status == "inactive")
+                  .badge.badge-red Tạm dừng
+              td #{item.createdAtFormat}
+              td
+                .inner-buttons
+                  button(
+                    class="inner-delete"
+                    button-delete
+                    data-api=`/${pathAdmin}/user/delete/${item.id}`
+                  ) <i class="fa-regular fa-trash-can"></i>
+  //- End Section 6
+
+  //- Section 7 - PHÂN TRANG
+  .section-7
+    span(class="inner-label") 
+      | Hiển thị #{(pagination.currentPage - 1) * pagination.limit + 1} - #{Math.min(pagination.currentPage * pagination.limit, pagination.totalRecords)} của #{pagination.totalRecords}
+    select(class="inner-pagination" pagination)
+      - for(let i = 1; i <= pagination.totalPages; i++)
+        option(value=i selected=(i == pagination.currentPage)) Trang #{i}
+  //- End Section 7

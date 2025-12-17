@@ -1,0 +1,527 @@
+extends ../layouts/default.pug
+
+block main
+  .booking-combo-container
+    .container
+      // Progress Steps
+      .booking-steps
+        .step.completed
+          .step-number 1
+          .step-label Chọn ghế
+        .step-arrow →
+        .step.active
+          .step-number 2
+          .step-label Chọn combo
+        .step-arrow →
+        .step.pending
+          .step-number 3
+          .step-label Xác nhận
+      
+      .booking-combo-layout
+        // Left: Combo Selection
+        .combo-section
+          h2.section-title
+            i.fa-solid.fa-popcorn(style="margin-right: 10px;")
+            | Chọn Combo
+          
+          .combo-list
+            each combo in combos
+              .combo-card(data-combo-id=combo.id)
+                .combo-info
+                  .combo-name #{combo.name}
+                  .combo-desc #{combo.description}
+                  .combo-price-row
+                    .combo-price
+                      span.price-new #{combo.price.toLocaleString('vi-VN')}đ
+                    .combo-controls
+                      button.btn-minus(data-combo=combo.id) −
+                      input.combo-quantity(
+                        type="text" 
+                        value="0" 
+                        readonly 
+                        data-combo-input=combo.id
+                        data-combo-name=combo.name
+                        data-combo-price=combo.price
+                      )
+                      button.btn-plus(data-combo=combo.id) +
+        
+        // Right: Booking Summary
+        .summary-section
+          .movie-info-card
+            .movie-poster
+              img(src=movieDetail.avatar alt=movieDetail.name)
+            
+            .movie-details
+              h3.movie-title #{movieDetail.name}
+              .movie-subtitle #{movieDetail.ageRating || 'P'} - #{movieDetail.language || 'Phụ đề'}
+              
+              .detail-row
+                .detail-icon
+                  i.fa-solid.fa-building
+                .detail-content
+                  .detail-label Rạp chiếu
+                  .detail-value#cinema-display --
+              
+              .detail-row
+                .detail-icon
+                  i.fa-regular.fa-calendar
+                .detail-content
+                  .detail-label Ngày chiếu
+                  .detail-value#date-display --
+              
+              .detail-row
+                .detail-icon
+                  i.fa-regular.fa-clock
+                .detail-content
+                  .detail-label Giờ chiếu
+                  .detail-value#time-display --
+              
+              .detail-row
+                .detail-icon
+                  i.fa-solid.fa-couch
+                .detail-content
+                  .detail-label Ghế ngồi
+                  .detail-value#seats-display --
+          
+          .price-summary
+            h4.summary-title Chi Tiết Giá
+            
+            .price-row
+              span Tiền vé
+              span#ticket-price 0đ
+            
+            .price-row
+              span Tiền combo
+              span#combo-price 0đ
+            
+            .price-row.total-row
+              strong Tổng cộng
+              strong.total-amount#total-price 0đ
+          
+          .action-buttons
+            button.btn-back(onclick="history.back()") Quay lại
+            button.btn-continue#btn-continue Tiếp tục
+
+  style.
+    .booking-combo-container {
+      background: #f5f5f5;
+      padding: 30px 0 60px;
+      min-height: 100vh;
+    }
+    
+    .booking-steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      background: #e0e0e0;
+      color: #666;
+    }
+    
+    .step.completed .step-number {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .step.active .step-number {
+      background: #2196F3;
+      color: white;
+    }
+    
+    .step-label {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .step.active .step-label {
+      color: #2196F3;
+      font-weight: 600;
+    }
+    
+    .step-arrow {
+      margin: 0 20px;
+      color: #bdbdbd;
+      font-size: 24px;
+    }
+    
+    .booking-combo-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+    }
+    
+    .combo-section {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+    }
+    
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+      margin: 0 0 25px 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .combo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .combo-card {
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    
+    .combo-card:hover {
+      border-color: #2196F3;
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    }
+    
+    .combo-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .combo-desc {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+    
+    .combo-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .price-new {
+      font-size: 20px;
+      font-weight: 700;
+      color: #EF5350;
+    }
+    
+    .combo-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .btn-minus,
+    .btn-plus {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #2196F3;
+      background: white;
+      color: #2196F3;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .btn-minus:hover,
+    .btn-plus:hover {
+      background: #2196F3;
+      color: white;
+    }
+    
+    .combo-quantity {
+      width: 50px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .summary-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+    }
+    
+    .movie-info-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+    .movie-poster {
+      width: 100%;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .movie-poster img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .movie-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: #2196F3;
+    }
+    
+    .movie-subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    .detail-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .detail-icon {
+      width: 24px;
+      color: #2196F3;
+      margin-top: 2px;
+    }
+    
+    .detail-content {
+      flex: 1;
+    }
+    
+    .detail-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 2px;
+    }
+    
+    .detail-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .price-summary {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+    .summary-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      color: #333;
+    }
+    
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .price-row.total-row {
+      padding-top: 15px;
+      border-top: 2px solid #e0e0e0;
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 0;
+    }
+    
+    .total-amount {
+      color: #EF5350;
+      font-size: 24px;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .btn-back,
+    .btn-continue {
+      height: 50px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-back {
+      background: #e0e0e0;
+      color: #666;
+    }
+    
+    .btn-back:hover {
+      background: #d5d5d5;
+    }
+    
+    .btn-continue {
+      background: #2196F3;
+      color: white;
+    }
+    
+    .btn-continue:hover {
+      background: #1976D2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    }
+    
+    @media (max-width: 991.98px) {
+      .booking-combo-layout {
+        grid-template-columns: 1fr;
+      }
+      
+      .summary-section {
+        position: static;
+      }
+    }
+
+  script.
+    // Thay thế toàn bộ script block trong booking-combo.pug
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const isLoggedIn = #{user ? 'true' : 'false'};
+      
+      // ===== KIỂM TRA ĐĂNG NHẬP NGAY KHI VÀO TRANG =====
+      if (!isLoggedIn) {
+        alert('Bạn cần đăng nhập để tiếp tục đặt vé!');
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = '/user/login';
+        return;
+      }
+      // =================================================
+      
+      const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || 'null');
+      
+      if (!bookingData || !bookingData.movieId || !bookingData.seats) {
+        alert('Không tìm thấy thông tin đặt vé. Vui lòng chọn ghế lại.');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Hiển thị thông tin booking
+      document.getElementById('cinema-display').textContent = bookingData.cinema || '--';
+      document.getElementById('date-display').textContent = bookingData.showtimeDate ? 
+        new Date(bookingData.showtimeDate).toLocaleDateString('vi-VN') : '--';
+      document.getElementById('time-display').textContent = bookingData.showtimeTime || '--';
+      document.getElementById('seats-display').textContent = 
+        bookingData.seats.map(s => s.seatNumber).join(', ');
+      
+      let ticketPrice = bookingData.ticketPrice || 0;
+      document.getElementById('ticket-price').textContent = ticketPrice.toLocaleString('vi-VN') + 'đ';
+      
+      // Xử lý tăng/giảm combo
+      document.querySelectorAll('.btn-plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const comboId = this.getAttribute('data-combo');
+          const input = document.querySelector(`[data-combo-input="${comboId}"]`);
+          let qty = parseInt(input.value) || 0;
+          qty++;
+          input.value = qty;
+          updateComboPrice();
+        });
+      });
+      
+      document.querySelectorAll('.btn-minus').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const comboId = this.getAttribute('data-combo');
+          const input = document.querySelector(`[data-combo-input="${comboId}"]`);
+          let qty = parseInt(input.value) || 0;
+          if (qty > 0) {
+            qty--;
+            input.value = qty;
+            updateComboPrice();
+          }
+        });
+      });
+      
+      function updateComboPrice() {
+        let comboTotal = 0;
+        
+        document.querySelectorAll('[data-combo-input]').forEach(input => {
+          const qty = parseInt(input.value) || 0;
+          const price = parseInt(input.getAttribute('data-combo-price')) || 0;
+          if (qty > 0) {
+            comboTotal += price * qty;
+          }
+        });
+        
+        document.getElementById('combo-price').textContent = comboTotal.toLocaleString('vi-VN') + 'đ';
+        
+        const total = ticketPrice + comboTotal;
+        document.getElementById('total-price').textContent = total.toLocaleString('vi-VN') + 'đ';
+      }
+      
+      updateComboPrice();
+      
+      // Xử lý nút Tiếp tục
+      document.getElementById('btn-continue').addEventListener('click', function() {
+        const selectedCombos = {};
+        
+        document.querySelectorAll('[data-combo-input]').forEach(input => {
+          const qty = parseInt(input.value) || 0;
+          if (qty > 0) {
+            const comboId = input.getAttribute('data-combo-input');
+            selectedCombos[comboId] = {
+              name: input.getAttribute('data-combo-name'),
+              price: parseInt(input.getAttribute('data-combo-price')),
+              quantity: qty
+            };
+          }
+        });
+        
+        bookingData.combos = selectedCombos;
+        sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+        
+        console.log('=== Updated booking data with combos ===');
+        console.log(bookingData);
+        
+        window.location.href = '/booking/checkout';
+      });
+    });

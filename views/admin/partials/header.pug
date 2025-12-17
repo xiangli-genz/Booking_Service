@@ -1,0 +1,13 @@
+header.header
+  .inner-logo
+    a(href=`/${pathAdmin}/dashboard`)
+      span 
+      span 
+  .inner-wrap
+    .inner-account
+      .inner-avatar
+        img(src=account.avatar, alt=account.fullName)
+      .inner-text
+        .inner-name #{account.fullName}
+    button.inner-button-menu
+      <i class="fa-solid fa-bars"></i>

@@ -1,0 +1,110 @@
+extends ../layouts/default.pug
+
+block main
+  h1.box-title Đặt vé: #{bookingDetail.bookingCode}
+
+  .section-8
+    form#booking-edit-form
+      .inner-group
+        label(class="inner-label") Thông tin phim
+        .inner-order-list
+          .inner-order-item
+            .inner-order-image
+              img(src=bookingDetail.movieAvatar, alt=bookingDetail.movieName)
+            .inner-order-content
+              .inner-order-name #{bookingDetail.movieName}
+              .inner-order-text Rạp: #{bookingDetail.cinema}
+              .inner-order-text Ngày: #{bookingDetail.showtimeDateFormat}
+              .inner-order-text Giờ: #{bookingDetail.showtime.time}
+              .inner-order-text Định dạng: #{bookingDetail.showtime.format}
+
+      .inner-group
+        label(class="inner-label") Thông tin ghế
+        .inner-order-total
+          each seat in bookingDetail.seats
+            div Ghế #{seat.seatNumber} (#{seat.type === 'standard' ? 'Thường' : seat.type === 'vip' ? 'VIP' : 'Đôi'}): #{seat.price.toLocaleString("vi-VN")}đ
+
+      .inner-group
+        label(class="inner-label") Combo đã chọn
+        .inner-order-total
+          if bookingDetail.combos && bookingDetail.combos.length > 0
+            each combo in bookingDetail.combos
+              div #{combo.name} x#{combo.quantity}: #{combo.totalPrice.toLocaleString("vi-VN")}đ
+          else
+            div Không có combo
+    
+      .inner-group
+      .inner-group
+        label(class="inner-label" for="paymentStatus") Trạng thái thanh toán
+        select(id="paymentStatus" name="paymentStatus")
+          each item in paymentStatus
+            option(
+              value=item.value
+              selected=(item.value == bookingDetail.paymentStatus ? true : false)
+            ) #{item.label}
+
+      .inner-group
+        label(class="inner-label" for="status") Trạng thái đặt vé
+        select(id="status" name="status")
+          each item in bookingStatus
+            option(
+              value=item.value
+              selected=(item.value == bookingDetail.status ? true : false)
+            ) #{item.label}
+
+      .inner-group
+        label(class="inner-label" for="createdAt") Ngày đặt
+        input(type="datetime-local" id="createdAt" name="createdAt" value=bookingDetail.createdAtFormat readonly)
+
+      .inner-group
+        label(class="inner-label") Thanh toán
+        .inner-order-total
+          div Tiền vé: #{(bookingDetail.subTotal || 0).toLocaleString("vi-VN")}đ
+          div Tiền combo: #{(bookingDetail.comboTotal || 0).toLocaleString("vi-VN")}đ
+          div Giảm giá: #{(bookingDetail.discount || 0).toLocaleString("vi-VN")}đ
+          div Tổng thanh toán: <span class="inner-order-price">#{(bookingDetail.total || 0).toLocaleString("vi-VN")}đ</span>
+
+      .inner-button.inner-two-col
+        button Cập nhật
+    
+    .inner-back
+      a(href=`/${pathAdmin}/booking/list`) Quay lại danh sách
+
+    script.
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('booking-edit-form');
+            
+            if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const id = '#{bookingDetail.id}';
+                const formData = {
+                paymentStatus: document.getElementById('paymentStatus').value,
+                status: document.getElementById('status').value,
+                note: document.getElementById('note')?.value || ''
+                };
+                
+                fetch(`/${pathAdmin}/booking/edit/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+                })
+                .then(res => res.json())
+                .then(data => {
+                if (data.code === 'success') {
+                    alert('Cập nhật thành công!');
+                    window.location.href = `/${pathAdmin}/booking/list`;
+                } else {
+                    alert(data.message || 'Cập nhật thất bại!');
+                }
+                })
+                .catch(err => {
+                console.error('Error:', err);
+                alert('Có lỗi xảy ra!');
+                });
+            });
+            }
+        });

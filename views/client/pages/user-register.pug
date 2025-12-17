@@ -1,0 +1,39 @@
+extends ../layouts/default.pug
+
+block main
+  .section-12
+    .container
+      .inner-wrap
+        h2.inner-title-main Đăng Ký Tài Khoản
+        form#user-register-form
+          .inner-info
+            .inner-inputs
+              .inner-input
+                input#full-name-input(
+                  placeholder="Họ và tên *" 
+                  name="fullName" 
+                  type="text"
+                )
+              .inner-input
+                input#email-input(
+                  placeholder="Email *" 
+                  name="email" 
+                  type="email"
+                )
+              .inner-input
+                input#phone-input(
+                  placeholder="Số điện thoại *" 
+                  name="phone" 
+                  type="text"
+                )
+              .inner-input
+                input#password-input(
+                  placeholder="Mật khẩu *" 
+                  name="password" 
+                  type="password"
+                )
+          .inner-button
+            button(type="submit") Đăng Ký
+        .inner-more
+          span Đã có tài khoản?
+          a(href="/user/login") Đăng nhập
