@@ -1,44 +1,37 @@
 {
-  "name": "project_1",
+  "name": "booking-service",
   "version": "1.0.0",
-  "description": "Cinema Booking System with Node.js, Express, MongoDB",
+  "description": "Microservice for managing movie ticket bookings",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "seed": "node seeds/seed.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint **/*.js"
   },
-  "keywords": [
-    "cinema",
-    "booking",
-    "movie",
-    "ticket"
-  ],
-  "author": "Your Name",
-  "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.10.3",
     "axios": "^1.6.0",
-    "bcryptjs": "^2.4.3",
-    "cloudinary": "^1.41.0",
-    "cookie-parser": "^1.4.6",
-    "crypto-js": "^4.2.0",
+    "bull": "^4.11.5",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "express-flash": "^0.0.2",
-    "express-session": "^1.17.3",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.29.4",
     "mongoose": "^8.0.3",
-    "mongoose-slug-updater": "^3.3.0",
-    "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^6.9.7",
-    "pug": "^3.0.2",
-    "slugify": "^1.6.6",
+    "node-cron": "^3.0.3",
+    "redis": "^4.6.5",
+    "winston": "^3.11.0",
     "yarn": "^1.22.22"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "eslint": "^8.55.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   }
 }

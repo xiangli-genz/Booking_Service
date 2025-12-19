@@ -1,48 +1,63 @@
-const express = require('express')
-const path = require('path');
+// services/booking-service/index.js
 require('dotenv').config();
-const database = require('./config/database');
-const adminRoutes = require('./routes/admin/index.route');
-const clientRoutes = require('./routes/client/index.route');
-const variablesConfig = require('./config/variable');
-const cookieParser = require('cookie-parser');
-const flash = require('express-flash');
-const session = require('express-session');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bookingRoutes = require('./routes/booking.route');
+const cleanupHelper = require('./helpers/cleanup.helper');
 
-const app = express()
-const port = 3000
+const app = express();
+const PORT = process.env.BOOKING_SERVICE_PORT || 3001;
 
-//kết nối database
-database.connect();
-
-//Thiết lập view
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
-
-//Thiết lập thư mục tĩnh
-app.use(express.static(path.join(__dirname, 'public')));
-
-//tạo biến cục file pug
-app.locals.pathAdmin = variablesConfig.pathAdmin;
-
-// Tạo biến toàn cục trong các file backend
-global.pathAdmin = variablesConfig.pathAdmin;
-
-// Cho phép gửi từ data lên json
+// Middleware
+app.use(cors({
+  origin: process.env.GATEWAY_URL || 'http://localhost:3001',
+  credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-//Sử dụng cookie parser
-app.use(cookieParser("SFGWHSDSGSDSD"));
-
-// Nhúng Flash
-app.use(session({ cookie: { maxAge: 60000 }}));
-app.use(flash());
-
-
-//Thiết lập đường dẫn
-app.use(`/${variablesConfig.pathAdmin}`, adminRoutes);
-app.use('/', clientRoutes);
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+// Database connection
+mongoose.connect(process.env.DATABASE, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
+.then(() => {
+  console.log('✓ Booking Service: Connected to MongoDB');
+  
+  // Start cleanup job after DB connected
+  cleanupHelper.startCleanupJob();
+})
+.catch(err => {
+  console.error('✗ Booking Service: MongoDB connection error:', err);
+  process.exit(1);
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    service: 'booking-service',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Routes
+app.use('/api/bookings', bookingRoutes);
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Booking Service Error:', err);
+  res.status(500).json({
+    code: 'error',
+    message: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`✓ Booking Service running on port ${PORT}`);
+});
+
+module.exports = app;
