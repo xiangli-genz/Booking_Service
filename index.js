@@ -11,7 +11,7 @@ const PORT = process.env.BOOKING_SERVICE_PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.GATEWAY_URL || 'http://localhost:3001',
+  origin: process.env.GATEWAY_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());

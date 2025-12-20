@@ -207,12 +207,12 @@ module.exports.updateCombos = async (req, res) => {
 
 // ===== [PATCH] /api/bookings/:id/confirm =====
 // Bước 3: Xác nhận booking (chuyển sang initial, chờ thanh toán)
-module.exports.confirm = async (req, res) => {
+module.exports.confirmImproved = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { fullName, phone, email, note, paymentMethod } = req.body;
     
-    // Validate
+    // Validate input
     if (!fullName || !phone) {
       return res.status(400).json({
         code: 'error',
@@ -245,6 +245,8 @@ module.exports.confirm = async (req, res) => {
     // Kiểm tra hết hạn
     if (booking.isExpired()) {
       booking.status = config.BOOKING_STATUS.EXPIRED;
+      booking.deleted = true;
+      booking.deletedAt = new Date();
       await booking.save();
       
       return res.status(410).json({
@@ -252,6 +254,26 @@ module.exports.confirm = async (req, res) => {
         message: 'Booking đã hết hạn!'
       });
     }
+    
+    // ===== QUAN TRỌNG: Kiểm tra lại ghế có còn available không =====
+    const seatNumbers = booking.seats.map(s => s.seatNumber);
+    const checkResult = await Booking.checkSeatsAvailable(
+      booking.movieId,
+      booking.cinema,
+      booking.showtime.date,
+      booking.showtime.time,
+      seatNumbers
+    );
+    
+    if (!checkResult.available) {
+      // Có ghế bị đặt rồi
+      return res.status(409).json({
+        code: 'conflict',
+        message: `Ghế ${checkResult.unavailableSeats.join(', ')} đã được đặt bởi người khác. Vui lòng chọn lại!`,
+        unavailableSeats: checkResult.unavailableSeats
+      });
+    }
+    // =============================================================
     
     // Cập nhật thông tin
     booking.fullName = fullName;
@@ -456,6 +478,65 @@ module.exports.cancel = async (req, res) => {
     return res.status(500).json({
       code: 'error',
       message: 'Không thể hủy booking'
+    });
+  }
+};
+
+// ===== [PATCH] /api/bookings/:id/payment-completed =====
+// Nhận thông báo từ Payment Service khi thanh toán thành công
+module.exports.markPaymentCompleted = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const { paymentId, paymentCode, amount, provider } = req.body;
+    
+    // Tìm booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      deleted: false
+    });
+    
+    if (!booking) {
+      return res.status(404).json({
+        code: 'error',
+        message: 'Booking không tồn tại!'
+      });
+    }
+    
+    // Kiểm tra amount có khớp không
+    if (amount !== booking.total) {
+      console.warn(`Amount mismatch: booking.total=${booking.total}, payment.amount=${amount}`);
+    }
+    
+    // ===== CẬP NHẬT BOOKING =====
+    booking.paymentStatus = 'paid';
+    booking.status = 'confirmed';
+    booking.completedAt = new Date();
+    
+    // Lưu thông tin payment vào metadata (optional)
+    if (!booking.metadata) {
+      booking.metadata = {};
+    }
+    booking.metadata.paymentId = paymentId;
+    booking.metadata.paymentCode = paymentCode;
+    booking.metadata.paymentProvider = provider;
+    
+    await booking.save();
+    
+    return res.json({
+      code: 'success',
+      message: 'Cập nhật booking thành công!',
+      data: {
+        bookingId: booking._id,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error marking payment completed:', error);
+    return res.status(500).json({
+      code: 'error',
+      message: 'Không thể cập nhật booking'
     });
   }
 };
