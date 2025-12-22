@@ -17,6 +17,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ===== SERVE TEST HTML =====
+app.use(express.static('public'));
+// ============================
+
 // Database connection
 mongoose.connect(process.env.DATABASE, {
   useNewUrlParser: true,
@@ -24,8 +28,6 @@ mongoose.connect(process.env.DATABASE, {
 })
 .then(() => {
   console.log('✓ Booking Service: Connected to MongoDB');
-  
-  // Start cleanup job after DB connected
   cleanupHelper.startCleanupJob();
 })
 .catch(err => {
@@ -58,6 +60,7 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`✓ Booking Service running on port ${PORT}`);
+  console.log(`✓ Test UI available at: http://localhost:${PORT}/test.html`);
 });
 
 module.exports = app;
