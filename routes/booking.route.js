@@ -8,28 +8,30 @@ const serviceAuth = require('../middleware/serviceAuth.middleware');
 
 // ===== BOOKING WORKFLOW =====
 
-// Bước 1: Tạo booking tạm thời (giữ ghế 10 phút)
+// ✅ Bước 1: Tạo booking (Main-app sẽ call endpoint này)
 router.post('/create', bookingController.create);
 
-// Bước 2: Cập nhật combo
+// ✅ Bước 2: Cập nhật combo
 router.patch('/:id/combos', bookingController.updateCombos);
 
-// Bước 3: Xác nhận booking (chuyển sang initial)
+// ✅ Bước 3: Xác nhận booking
 router.patch('/:id/confirm', bookingController.confirmImproved);
 
 // ===== QUERY & MANAGEMENT =====
 
-// Lấy thông tin booking
+// ✅ Lấy thông tin booking
 router.get('/:id', bookingController.getById);
 
-// Kiểm tra trạng thái & thời gian còn lại
+// ✅ Kiểm tra trạng thái
 router.get('/:id/status', bookingController.checkStatus);
 
-// Lấy danh sách ghế đã đặt
+// ✅ Lấy danh sách ghế đã đặt (Main-app cần route này!)
 router.get('/seats/booked', bookingController.getBookedSeats);
 
-// Hủy booking
+// ✅ Hủy booking
 router.delete('/:id', bookingController.cancel);
+
+// ===== ADMIN & STATISTICS =====
 
 // Kiểm tra và cập nhật trạng thái ghế hết hạn
 router.post('/check-expired', async (req, res) => {
@@ -77,6 +79,7 @@ router.post('/check-expired', async (req, res) => {
   }
 });
 
+// Thống kê
 router.get('/statistics', async (req, res) => {
   try {
     const { movieId, cinema, startDate, endDate } = req.query;
@@ -140,6 +143,7 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
+// Callback từ Payment Service
 router.patch('/:id/payment-completed', serviceAuth, bookingController.markPaymentCompleted);
 
 module.exports = router;

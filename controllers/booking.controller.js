@@ -4,12 +4,24 @@ const config = require('../config/config');
 const { generateBookingCode } = require('../helpers/generate.helper');
 
 // ===== [POST] /api/bookings/create =====
-// Bước 1: Tạo booking tạm thời khi chọn ghế
 module.exports.create = async (req, res) => {
   try {
-    const { movieId, movieName, movieAvatar, cinema, showtimeDate, showtimeTime, showtimeFormat, seats, userId } = req.body;
+    const { 
+      movieId, movieName, movieAvatar, 
+      cinema, showtimeDate, showtimeTime, showtimeFormat, 
+      seats, combos,
+      fullName, phone, email, note, paymentMethod,
+      userId 
+    } = req.body;
     
-    // Validate
+    console.log('=== RECEIVED BOOKING REQUEST ===');
+    console.log('Movie:', movieName, movieId);
+    console.log('Cinema:', cinema);
+    console.log('Showtime:', showtimeDate, showtimeTime);
+    console.log('Seats:', seats);
+    console.log('Customer:', fullName, phone);
+    
+    // ===== VALIDATE =====
     if (!movieId || !cinema || !showtimeDate || !showtimeTime || !seats || seats.length === 0) {
       return res.status(400).json({
         code: 'error',
@@ -17,7 +29,22 @@ module.exports.create = async (req, res) => {
       });
     }
     
-    // Normalize seats
+    if (!fullName || !phone) {
+      return res.status(400).json({
+        code: 'error',
+        message: 'Vui lòng nhập họ tên và số điện thoại!'
+      });
+    }
+    
+    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/g;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        code: 'error',
+        message: 'Số điện thoại không hợp lệ!'
+      });
+    }
+    
+    // ===== NORMALIZE SEATS =====
     const seatDetails = seats.map(seat => {
       if (typeof seat === 'object' && seat.seatNumber) {
         return {
@@ -36,7 +63,7 @@ module.exports.create = async (req, res) => {
       });
     }
     
-    // Parse showtime date
+    // ===== PARSE SHOWTIME DATE =====
     const showtimeDateObj = new Date(showtimeDate);
     if (isNaN(showtimeDateObj.getTime())) {
       return res.status(400).json({
@@ -45,7 +72,7 @@ module.exports.create = async (req, res) => {
       });
     }
     
-    // Kiểm tra ghế có available không
+    // ===== CHECK SEATS AVAILABLE =====
     const seatNumbers = seatDetails.map(s => s.seatNumber);
     const checkResult = await Booking.checkSeatsAvailable(
       movieId,
@@ -57,61 +84,123 @@ module.exports.create = async (req, res) => {
     
     if (!checkResult.available) {
       return res.status(409).json({
-        code: 'error',
+        code: 'conflict',
         message: `Ghế ${checkResult.unavailableSeats.join(', ')} đã được đặt. Vui lòng chọn ghế khác!`,
         unavailableSeats: checkResult.unavailableSeats
       });
     }
     
-    // Tính tiền vé
+    // ===== CALCULATE PRICES =====
     const subTotal = seatDetails.reduce((sum, seat) => sum + seat.price, 0);
     
-    // Tạo booking code
+    let comboTotal = 0;
+    const comboDetails = [];
+    
+    if (combos && typeof combos === 'object') {
+      Object.keys(combos).forEach(key => {
+        const combo = combos[key];
+        if (combo && combo.quantity > 0) {
+          const quantity = parseInt(combo.quantity) || 0;
+          const price = parseInt(combo.price) || 0;
+          const totalPrice = price * quantity;
+          
+          comboTotal += totalPrice;
+          comboDetails.push({
+            comboId: key,
+            name: combo.name || key,
+            quantity: quantity,
+            price: price,
+            totalPrice: totalPrice
+          });
+        }
+      });
+    }
+    
+    const discount = 0;
+    const total = subTotal + comboTotal - discount;
+    
+    // ===== CREATE BOOKING =====
     const bookingCode = generateBookingCode();
     
-    // Tạo booking
     const booking = new Booking({
       bookingCode,
+      
+      // Customer info
+      fullName,
+      phone,
+      email: email || '',
+      note: note || '',
+      
+      // Movie info
       movieId,
       movieName: movieName || 'Unknown Movie',
       movieAvatar: movieAvatar || '',
+      
+      // Showtime info
       cinema,
       showtime: {
         date: showtimeDateObj,
         time: showtimeTime,
         format: showtimeFormat || '2D'
       },
+      
+      // Seats & Combos
       seats: seatDetails,
-      combos: [],
+      combos: comboDetails,
+      
+      // Prices
       subTotal,
-      comboTotal: 0,
-      discount: 0,
-      total: subTotal,
-      paymentMethod: null,
+      comboTotal,
+      discount,
+      total,
+      
+      // Payment
+      paymentMethod: paymentMethod || 'cash',
       paymentStatus: config.PAYMENT_STATUS.UNPAID,
-      status: config.BOOKING_STATUS.PENDING,
-      isTemporary: true,
+      
+      // Status
+      status: config.BOOKING_STATUS.CONFIRMED, // ✅ Đặt luôn là CONFIRMED
+      isTemporary: false,
+      
+      // User
       userId: userId || null
     });
     
     await booking.save();
     
+    console.log('✅ BOOKING CREATED:', booking.bookingCode);
+    
     return res.status(201).json({
       code: 'success',
-      message: 'Ghế đã được giữ trong 10 phút!',
+      message: 'Đặt vé thành công!',
       data: {
         bookingId: booking._id,
         bookingCode: booking.bookingCode,
-        expiresAt: booking.expiresAt,
-        timeRemaining: booking.getTimeRemaining(),
-        seats: booking.seats,
-        subTotal: booking.subTotal,
-        total: booking.total
+        booking: {
+          _id: booking._id,
+          bookingCode: booking.bookingCode,
+          movieName: booking.movieName,
+          movieAvatar: booking.movieAvatar,
+          cinema: booking.cinema,
+          showtime: booking.showtime,
+          seats: booking.seats,
+          combos: booking.combos,
+          fullName: booking.fullName,
+          phone: booking.phone,
+          subTotal: booking.subTotal,
+          comboTotal: booking.comboTotal,
+          discount: booking.discount,
+          total: booking.total,
+          paymentMethod: booking.paymentMethod,
+          paymentStatus: booking.paymentStatus,
+          status: booking.status,
+          createdAt: booking.createdAt
+        }
       }
     });
     
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('❌ Error creating booking:', error);
     return res.status(500).json({
       code: 'error',
       message: 'Không thể tạo booking',
@@ -121,16 +210,13 @@ module.exports.create = async (req, res) => {
 };
 
 // ===== [PATCH] /api/bookings/:id/combos =====
-// Bước 2: Cập nhật combo vào booking
 module.exports.updateCombos = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { combos } = req.body;
     
-    // Tìm booking
     const booking = await Booking.findOne({
       _id: bookingId,
-      status: config.BOOKING_STATUS.PENDING,
       deleted: false
     });
     
@@ -141,18 +227,6 @@ module.exports.updateCombos = async (req, res) => {
       });
     }
     
-    // Kiểm tra hết hạn
-    if (booking.isExpired()) {
-      booking.status = config.BOOKING_STATUS.EXPIRED;
-      await booking.save();
-      
-      return res.status(410).json({
-        code: 'expired',
-        message: 'Booking đã hết hạn!'
-      });
-    }
-    
-    // Parse combos
     const comboDetails = [];
     let comboTotal = 0;
     
@@ -176,7 +250,6 @@ module.exports.updateCombos = async (req, res) => {
       });
     }
     
-    // Cập nhật booking
     booking.combos = comboDetails;
     booking.comboTotal = comboTotal;
     booking.total = booking.subTotal + comboTotal - booking.discount;
@@ -190,9 +263,7 @@ module.exports.updateCombos = async (req, res) => {
         bookingId: booking._id,
         combos: booking.combos,
         comboTotal: booking.comboTotal,
-        total: booking.total,
-        expiresAt: booking.expiresAt,
-        timeRemaining: booking.getTimeRemaining()
+        total: booking.total
       }
     });
     
@@ -206,13 +277,11 @@ module.exports.updateCombos = async (req, res) => {
 };
 
 // ===== [PATCH] /api/bookings/:id/confirm =====
-// Bước 3: Xác nhận booking (chuyển sang initial, chờ thanh toán)
 module.exports.confirmImproved = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { fullName, phone, email, note, paymentMethod } = req.body;
     
-    // Validate input
     if (!fullName || !phone) {
       return res.status(400).json({
         code: 'error',
@@ -228,10 +297,8 @@ module.exports.confirmImproved = async (req, res) => {
       });
     }
     
-    // Tìm booking
     const booking = await Booking.findOne({
       _id: bookingId,
-      status: config.BOOKING_STATUS.PENDING,
       deleted: false
     });
     
@@ -242,48 +309,12 @@ module.exports.confirmImproved = async (req, res) => {
       });
     }
     
-    // Kiểm tra hết hạn
-    if (booking.isExpired()) {
-      booking.status = config.BOOKING_STATUS.EXPIRED;
-      booking.deleted = true;
-      booking.deletedAt = new Date();
-      await booking.save();
-      
-      return res.status(410).json({
-        code: 'expired',
-        message: 'Booking đã hết hạn!'
-      });
-    }
-    
-    // ===== QUAN TRỌNG: Kiểm tra lại ghế có còn available không =====
-    const seatNumbers = booking.seats.map(s => s.seatNumber);
-    const checkResult = await Booking.checkSeatsAvailable(
-      booking.movieId,
-      booking.cinema,
-      booking.showtime.date,
-      booking.showtime.time,
-      seatNumbers
-    );
-    
-    if (!checkResult.available) {
-      // Có ghế bị đặt rồi
-      return res.status(409).json({
-        code: 'conflict',
-        message: `Ghế ${checkResult.unavailableSeats.join(', ')} đã được đặt bởi người khác. Vui lòng chọn lại!`,
-        unavailableSeats: checkResult.unavailableSeats
-      });
-    }
-    // =============================================================
-    
-    // Cập nhật thông tin
     booking.fullName = fullName;
     booking.phone = phone;
     booking.email = email || '';
     booking.note = note || '';
     booking.paymentMethod = paymentMethod || 'money';
-    booking.status = config.BOOKING_STATUS.INITIAL;
-    booking.isTemporary = false;
-    booking.expiresAt = null;
+    booking.status = config.BOOKING_STATUS.CONFIRMED;
     
     await booking.save();
     
@@ -308,7 +339,6 @@ module.exports.confirmImproved = async (req, res) => {
 };
 
 // ===== [GET] /api/bookings/:id =====
-// Lấy thông tin booking
 module.exports.getById = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -325,18 +355,10 @@ module.exports.getById = async (req, res) => {
       });
     }
     
-    // Check expired
-    if (booking.isExpired() && booking.status === config.BOOKING_STATUS.PENDING) {
-      booking.status = config.BOOKING_STATUS.EXPIRED;
-      await booking.save();
-    }
-    
     return res.json({
       code: 'success',
       data: {
-        booking: booking,
-        timeRemaining: booking.getTimeRemaining(),
-        isExpired: booking.isExpired()
+        booking: booking
       }
     });
     
@@ -350,7 +372,6 @@ module.exports.getById = async (req, res) => {
 };
 
 // ===== [GET] /api/bookings/seats/booked =====
-// Lấy danh sách ghế đã đặt
 module.exports.getBookedSeats = async (req, res) => {
   try {
     const { movieId, cinema, date, time } = req.query;
@@ -386,7 +407,6 @@ module.exports.getBookedSeats = async (req, res) => {
 };
 
 // ===== [GET] /api/bookings/:id/status =====
-// Kiểm tra trạng thái và thời gian còn lại
 module.exports.checkStatus = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -403,27 +423,11 @@ module.exports.checkStatus = async (req, res) => {
       });
     }
     
-    // Auto update status if expired
-    if (booking.isExpired() && booking.status === config.BOOKING_STATUS.PENDING) {
-      booking.status = config.BOOKING_STATUS.EXPIRED;
-      await booking.save();
-      
-      return res.json({
-        code: 'expired',
-        message: 'Booking đã hết hạn!',
-        data: {
-          status: booking.status,
-          timeRemaining: 0
-        }
-      });
-    }
-    
     return res.json({
       code: 'success',
       data: {
         status: booking.status,
-        timeRemaining: booking.getTimeRemaining(),
-        isExpired: booking.isExpired()
+        paymentStatus: booking.paymentStatus
       }
     });
     
@@ -437,7 +441,6 @@ module.exports.checkStatus = async (req, res) => {
 };
 
 // ===== [DELETE] /api/bookings/:id =====
-// Hủy booking
 module.exports.cancel = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -451,14 +454,6 @@ module.exports.cancel = async (req, res) => {
       return res.status(404).json({
         code: 'error',
         message: 'Booking không tồn tại!'
-      });
-    }
-    
-    // Chỉ cho phép hủy booking pending hoặc initial
-    if (![config.BOOKING_STATUS.PENDING, config.BOOKING_STATUS.INITIAL].includes(booking.status)) {
-      return res.status(400).json({
-        code: 'error',
-        message: 'Không thể hủy booking này!'
       });
     }
     
@@ -483,13 +478,11 @@ module.exports.cancel = async (req, res) => {
 };
 
 // ===== [PATCH] /api/bookings/:id/payment-completed =====
-// Nhận thông báo từ Payment Service khi thanh toán thành công
 module.exports.markPaymentCompleted = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const { paymentId, paymentCode, amount, provider } = req.body;
     
-    // Tìm booking
     const booking = await Booking.findOne({
       _id: bookingId,
       deleted: false
@@ -502,17 +495,10 @@ module.exports.markPaymentCompleted = async (req, res) => {
       });
     }
     
-    // Kiểm tra amount có khớp không
-    if (amount !== booking.total) {
-      console.warn(`Amount mismatch: booking.total=${booking.total}, payment.amount=${amount}`);
-    }
-    
-    // ===== CẬP NHẬT BOOKING =====
     booking.paymentStatus = 'paid';
     booking.status = 'confirmed';
     booking.completedAt = new Date();
     
-    // Lưu thông tin payment vào metadata (optional)
     if (!booking.metadata) {
       booking.metadata = {};
     }
