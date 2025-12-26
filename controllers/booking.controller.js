@@ -1,7 +1,10 @@
-// services/booking-service/controllers/booking.controller.js
+// ============================================
+// FILE 3: booking-service/controllers/booking.controller.js (CẬP NHẬT)
+// ============================================
 const Booking = require('../models/booking.model');
 const config = require('../config/config');
 const { generateBookingCode } = require('../helpers/generate.helper');
+const movieService = require('../helpers/movieService.helper'); // ← THÊM
 
 // ===== [POST] /api/bookings/create =====
 module.exports.create = async (req, res) => {
@@ -19,9 +22,8 @@ module.exports.create = async (req, res) => {
     console.log('Cinema:', cinema);
     console.log('Showtime:', showtimeDate, showtimeTime);
     console.log('Seats:', seats);
-    console.log('Customer:', fullName, phone);
     
-    // ===== VALIDATE =====
+    // ===== VALIDATE BASIC =====
     if (!movieId || !cinema || !showtimeDate || !showtimeTime || !seats || seats.length === 0) {
       return res.status(400).json({
         code: 'error',
@@ -44,13 +46,45 @@ module.exports.create = async (req, res) => {
       });
     }
     
+    // ===== 🔥 VALIDATE VỚI MOVIE SERVICE =====
+    console.log('→ Calling Movie Service to validate...');
+    
+    // 1. Lấy thông tin phim
+    const movie = await movieService.getMovieById(movieId);
+    
+    if (!movie) {
+      return res.status(404).json({
+        code: 'error',
+        message: 'Phim không tồn tại hoặc đã bị xóa!'
+      });
+    }
+    
+    console.log('✓ Movie found:', movie.name);
+    
+    // 2. Validate suất chiếu
+    const showtimeValidation = movieService.validateShowtime(
+      movie,
+      cinema,
+      showtimeDate,
+      showtimeTime
+    );
+    
+    if (!showtimeValidation.valid) {
+      return res.status(400).json({
+        code: 'error',
+        message: showtimeValidation.message
+      });
+    }
+    
+    console.log('✓ Showtime valid');
+    
     // ===== NORMALIZE SEATS =====
     const seatDetails = seats.map(seat => {
       if (typeof seat === 'object' && seat.seatNumber) {
         return {
           seatNumber: seat.seatNumber,
           type: seat.type || config.SEAT_TYPES.STANDARD,
-          price: parseInt(seat.price) || config.DEFAULT_SEAT_PRICES[seat.type || 'standard']
+          price: parseInt(seat.price) || movie.prices[seat.type || 'standard']
         };
       }
       return null;
@@ -62,6 +96,18 @@ module.exports.create = async (req, res) => {
         message: 'Không có ghế hợp lệ!'
       });
     }
+    
+    // 3. Validate giá vé
+    const priceValidation = movieService.validateSeatPrices(movie, seatDetails);
+    
+    if (!priceValidation.valid) {
+      return res.status(400).json({
+        code: 'error',
+        message: priceValidation.message
+      });
+    }
+    
+    console.log('✓ Seat prices valid');
     
     // ===== PARSE SHOWTIME DATE =====
     const showtimeDateObj = new Date(showtimeDate);
@@ -89,6 +135,8 @@ module.exports.create = async (req, res) => {
         unavailableSeats: checkResult.unavailableSeats
       });
     }
+    
+    console.log('✓ Seats available');
     
     // ===== CALCULATE PRICES =====
     const subTotal = seatDetails.reduce((sum, seat) => sum + seat.price, 0);
@@ -131,24 +179,24 @@ module.exports.create = async (req, res) => {
       email: email || '',
       note: note || '',
       
-      // Movie info
+      // Movie info (từ Movie Service)
       movieId,
-      movieName: movieName || 'Unknown Movie',
-      movieAvatar: movieAvatar || '',
+      movieName: movie.name, // ← Dùng từ Movie Service
+      movieAvatar: movie.avatar, // ← Dùng từ Movie Service
       
       // Showtime info
       cinema,
       showtime: {
         date: showtimeDateObj,
         time: showtimeTime,
-        format: showtimeFormat || '2D'
+        format: showtimeValidation.showtime.format // ← Dùng từ Movie Service
       },
       
       // Seats & Combos
       seats: seatDetails,
       combos: comboDetails,
       
-      // Prices
+      // Prices (đã validate)
       subTotal,
       comboTotal,
       discount,
@@ -159,7 +207,7 @@ module.exports.create = async (req, res) => {
       paymentStatus: config.PAYMENT_STATUS.UNPAID,
       
       // Status
-      status: config.BOOKING_STATUS.CONFIRMED, // ✅ Đặt luôn là CONFIRMED
+      status: config.BOOKING_STATUS.CONFIRMED,
       isTemporary: false,
       
       // User
