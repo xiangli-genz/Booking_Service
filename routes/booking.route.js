@@ -8,6 +8,9 @@ const serviceAuth = require('../middleware/serviceAuth.middleware');
 
 // ===== BOOKING WORKFLOW =====
 
+// ✅ Lấy danh sách ghế đã đặt (Main-app cần route này!)
+router.get('/seats/booked', bookingController.getBookedSeats);
+
 // ✅ Bước 1: Tạo booking (Main-app sẽ call endpoint này)
 router.post('/create', bookingController.create);
 
@@ -24,9 +27,6 @@ router.get('/:id', bookingController.getById);
 
 // ✅ Kiểm tra trạng thái
 router.get('/:id/status', bookingController.checkStatus);
-
-// ✅ Lấy danh sách ghế đã đặt (Main-app cần route này!)
-router.get('/seats/booked', bookingController.getBookedSeats);
 
 // ✅ Hủy booking
 router.delete('/:id', bookingController.cancel);
