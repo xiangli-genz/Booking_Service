@@ -8,19 +8,27 @@ const SERVICE_TOKEN = process.env.SERVICE_TOKEN || '';
  */
 const getMovieById = async (movieId) => {
   try {
-    const response = await axios.get(`${MOVIE_SERVICE_URL}/api/movies/${movieId}`, {
-      headers: {
-        'X-Service-Token': SERVICE_TOKEN
+    const response = await axios.get(
+      `${MOVIE_SERVICE_URL}/api/catalog/client/movies/${movieId}`,
+      {
+        headers: {
+          'X-Service-Token': SERVICE_TOKEN
+        },
+        timeout: 5000
       }
-    });
+    );
     
     if (response.data.code === 'success') {
-      return response.data.data.movie;
+      return response.data.data; // ✅ Trả về data trực tiếp
     }
     
+    console.warn('Movie not found:', movieId);
     return null;
   } catch (error) {
     console.error('Error calling Movie Service:', error.message);
+    if (error.response) {
+      console.error('Response:', error.response.status, error.response.data);
+    }
     return null;
   }
 };
