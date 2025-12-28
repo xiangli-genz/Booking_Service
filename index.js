@@ -4,17 +4,26 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
 const bookingRoutes = require('./routes/booking.route');
+let adminBookingRoutes;
+try {
+  adminBookingRoutes = require('./routes/admin/booking.route');
+} catch (err) {
+  if (err.code !== 'MODULE_NOT_FOUND') throw err;
+  console.warn('Admin booking routes not found - admin endpoints will be disabled');
+}
 const cleanupHelper = require('./helpers/cleanup.helper');
 
 const app = express();
-const PORT = process.env.BOOKING_SERVICE_PORT || 3001;
+const PORT = process.env.BOOKING_SERVICE_PORT || 3002;
 
 // ===== MIDDLEWARE =====
 app.use(cors({
-  origin: process.env.GATEWAY_URL || 'http://localhost:8080',
+  origin: [
+    process.env.GATEWAY_URL || 'http://localhost:8080',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -44,7 +53,13 @@ app.get('/health', (req, res) => {
 });
 
 // ===== API ROUTES =====
+// Public booking routes (for main-app)
 app.use('/api/bookings', bookingRoutes);
+
+// Admin booking routes
+if (adminBookingRoutes) {
+  app.use('/api/admin/bookings', adminBookingRoutes);
+}
 
 // ===== ERROR HANDLER =====
 app.use((err, req, res, next) => {
@@ -73,7 +88,8 @@ app.use((req, res) => {
 // ===== START SERVER =====
 app.listen(PORT, () => {
   console.log(`✓ Booking Service running on port ${PORT}`);
-  console.log(`✓ Test UI available at: http://localhost:${PORT}/test`);
+  console.log(`✓ API available at: http://localhost:${PORT}/api/bookings`);
+  console.log(`✓ Admin API available at: http://localhost:${PORT}/api/admin/bookings`);
 });
 
 module.exports = app;
