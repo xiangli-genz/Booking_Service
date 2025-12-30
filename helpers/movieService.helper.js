@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const MOVIE_SERVICE_URL = process.env.MOVIE_SERVICE_URL || 'http://localhost:3002';
+const MOVIE_SERVICE_URL = process.env.MOVIE_SERVICE_URL || 'http://localhost:3001';
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || '';
 
 /**
