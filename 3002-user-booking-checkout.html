@@ -1,0 +1,273 @@
+<!-- ============================================ -->
+<!-- FILE 3: views/client/pages/booking-checkout.html (CẬP NHẬT HOÀN TOÀN) -->
+<!-- ============================================ -->
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh Toán - Đặt Vé Xem Phim</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/3002-user-style.css" />
+  </head>
+  <body>
+    <div id="page-checkout" class="page-content">
+      <div class="container">
+        <div class="booking-steps">
+          <div class="step completed">
+            <div class="step-number">1</div>
+            <div class="step-label">Chọn suất chiếu</div>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step completed">
+            <div class="step-number">2</div>
+            <div class="step-label">Chọn ghế</div>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step completed">
+            <div class="step-number">3</div>
+            <div class="step-label">Chọn combo</div>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step active">
+            <div class="step-number">4</div>
+            <div class="step-label">Thanh toán</div>
+          </div>
+        </div>
+
+        <div class="checkout-grid">
+          <div class="checkout-form">
+            <h3 style="margin-bottom: 25px; color: var(--color-primary)">
+              <i class="fa-solid fa-user"></i> Thông Tin Khách Hàng
+            </h3>
+
+            <div class="form-group">
+              <label>Họ và tên <span style="color: red">*</span></label>
+              <input
+                type="text"
+                id="customer-name"
+                placeholder="Nhập họ và tên"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Số điện thoại <span style="color: red">*</span></label>
+              <input
+                type="tel"
+                id="customer-phone"
+                placeholder="Nhập số điện thoại"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                id="customer-email"
+                placeholder="Nhập email (không bắt buộc)"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Ghi chú</label>
+              <textarea
+                id="customer-note"
+                rows="3"
+                placeholder="Ghi chú thêm (không bắt buộc)"
+              ></textarea>
+            </div>
+
+            <h3 style="margin: 30px 0 25px; color: var(--color-primary)">
+              <i class="fa-solid fa-credit-card"></i> Phương Thức Thanh Toán
+            </h3>
+
+            <div class="payment-methods">
+              <div class="payment-option">
+                <input
+                  type="radio"
+                  name="payment"
+                  id="payment-cash"
+                  value="cash"
+                  checked
+                />
+                <label for="payment-cash">
+                  <div class="payment-icon">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; margin-bottom: 4px">
+                      Tiền mặt
+                    </div>
+                    <div style="font-size: 13px; color: #666">
+                      Thanh toán tại quầy khi nhận vé
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="payment-option">
+                <input
+                  type="radio"
+                  name="payment"
+                  id="payment-momo"
+                  value="momo"
+                />
+                <label for="payment-momo">
+                  <div class="payment-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; margin-bottom: 4px">
+                      Ví MoMo
+                    </div>
+                    <div style="font-size: 13px; color: #666">
+                      Thanh toán qua ví điện tử MoMo
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="payment-option">
+                <input
+                  type="radio"
+                  name="payment"
+                  id="payment-zalopay"
+                  value="zalopay"
+                />
+                <label for="payment-zalopay">
+                  <div class="payment-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; margin-bottom: 4px">
+                      ZaloPay
+                    </div>
+                    <div style="font-size: 13px; color: #666">
+                      Thanh toán qua ví ZaloPay
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="payment-option">
+                <input
+                  type="radio"
+                  name="payment"
+                  id="payment-zalopay"
+                  value="zalopay"
+                />
+                <label for="payment-vnpay">
+                  <div class="payment-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; margin-bottom: 4px">
+                      ZaloPay
+                    </div>
+                    <div style="font-size: 13px; color: #666">
+                      Thanh toán quá ví VnPay
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ SUMMARY CARD ĐẦY ĐỦ -->
+          <div class="summary-card">
+            <h3 class="summary-title">Thông Tin Đặt Vé</h3>
+
+            <div style="margin-bottom: 20px">
+              <img
+                id="summary-movie-avatar"
+                src=""
+                alt="Movie"
+                style="width: 100%; border-radius: 8px; display: none"
+              />
+            </div>
+
+            <div style="margin-bottom: 20px">
+              <h4
+                id="summary-movie-name"
+                style="color: var(--color-primary); margin-bottom: 10px"
+              >
+                -
+              </h4>
+              <p style="font-size: 13px; color: #666; margin: 0">
+                <span id="summary-movie-duration">-</span> |
+                <span id="summary-movie-rating">-</span>
+              </p>
+            </div>
+
+            <div class="summary-item">
+              <span style="color: #666">Rạp:</span>
+              <strong id="summary-cinema">-</strong>
+            </div>
+            <div class="summary-item">
+              <span style="color: #666">Ngày chiếu:</span>
+              <strong id="summary-date">-</strong>
+            </div>
+            <div class="summary-item">
+              <span style="color: #666">Suất chiếu:</span>
+              <strong id="summary-time">-</strong>
+            </div>
+            <div class="summary-item">
+              <span style="color: #666">Ghế:</span>
+              <strong id="summary-seats">-</strong>
+            </div>
+            <div class="summary-item">
+              <span style="color: #666">Combo:</span>
+              <strong id="summary-combo">Không</strong>
+            </div>
+
+            <div
+              style="
+                margin: 20px 0;
+                padding: 15px 0;
+                border-top: 2px solid #e0e0e0;
+                border-bottom: 2px solid #e0e0e0;
+              "
+            >
+              <div class="summary-item">
+                <span>Tiền vé:</span>
+                <span id="summary-ticket-price">0đ</span>
+              </div>
+              <div class="summary-item">
+                <span>Tiền combo:</span>
+                <span id="summary-combo-price">0đ</span>
+              </div>
+            </div>
+
+            <div class="summary-total">
+              <span>Tổng thanh toán:</span>
+              <span class="amount" id="summary-total">0đ</span>
+            </div>
+
+            <div style="margin-top: 25px">
+              <button
+                class="btn btn-success"
+                style="width: 100%; padding: 16px"
+                onclick="completeBooking()"
+              >
+                <i class="fa-solid fa-check-circle"></i> Xác nhận đặt vé
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-secondary" onclick="window.history.back()">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./js/3002-user-scripts.js"></script>
+  </body>
+</html>

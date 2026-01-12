@@ -616,3 +616,137 @@ module.exports.cancel = async (req, res) => {
     });
   }
 };
+
+// ===== [GET] /api/bookings/statistics =====
+module.exports.getStatistics = async (req, res) => {
+  try {
+    const { movieId, cinema, startDate, endDate } = req.query;
+
+    // Build query
+    let query = { deleted: false };
+    
+    if (movieId) {
+      query.movieId = movieId;
+    }
+    
+    if (cinema) {
+      query.cinema = cinema;
+    }
+    
+    // Filter by date range
+    if (startDate || endDate) {
+      query['showtime.date'] = {};
+      if (startDate) {
+        query['showtime.date'].$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query['showtime.date'].$lte = end;
+      }
+    }
+
+    // Aggregate statistics by status
+    const stats = await Booking.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalRevenue: { $sum: '$total' },
+          totalSeats: { $sum: { $size: '$seats' } }
+        }
+      }
+    ]);
+
+    // Format results
+    const statusStats = {};
+    let totalBookings = 0;
+    let totalRevenue = 0;
+    let totalSeats = 0;
+
+    stats.forEach(stat => {
+      statusStats[stat._id] = {
+        count: stat.count,
+        revenue: stat.totalRevenue,
+        seats: stat.totalSeats
+      };
+      totalBookings += stat.count;
+      totalRevenue += stat.totalRevenue;
+      totalSeats += stat.totalSeats;
+    });
+
+    return res.json({
+      code: 'success',
+      data: {
+        total: {
+          bookings: totalBookings,
+          revenue: totalRevenue,
+          seats: totalSeats
+        },
+        byStatus: statusStats,
+        query: {
+          movieId: movieId || 'all',
+          cinema: cinema || 'all',
+          startDate: startDate || 'all',
+          endDate: endDate || 'all'
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting statistics:', error);
+    return res.status(500).json({
+      code: 'error',
+      message: 'Không thể lấy thống kê'
+    });
+  }
+};
+
+// ===== [POST] /api/bookings/check-expired =====
+module.exports.checkExpired = async (req, res) => {
+  try {
+    const now = new Date();
+    
+    const expiredBookings = await Booking.find({
+      status: config.BOOKING_STATUS.PENDING,
+      expiresAt: { $lt: now },
+      deleted: false
+    });
+
+    if (expiredBookings.length > 0) {
+      await Booking.updateMany(
+        { _id: { $in: expiredBookings.map(b => b._id) } },
+        {
+          $set: {
+            status: config.BOOKING_STATUS.EXPIRED,
+            deleted: true,
+            deletedAt: now
+          }
+        }
+      );
+
+      return res.json({
+        code: 'success',
+        message: `Đã xử lý ${expiredBookings.length} booking hết hạn`,
+        data: {
+          count: expiredBookings.length,
+          expiredBookingIds: expiredBookings.map(b => b._id)
+        }
+      });
+    }
+
+    return res.json({
+      code: 'success',
+      message: 'Không có booking nào hết hạn',
+      data: { count: 0 }
+    });
+    
+  } catch (error) {
+    console.error('Error checking expired bookings:', error);
+    return res.status(500).json({
+      code: 'error',
+      message: 'Không thể kiểm tra booking hết hạn'
+    });
+  }
+};
